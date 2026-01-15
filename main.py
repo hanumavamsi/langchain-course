@@ -19,12 +19,12 @@ def main():
         template=summary_template,
     )
 
-    # llm = ChatOpenAI(model_name="gpt-5-nano", temperature=0)
+    llm = ChatOpenAI(model_name="gpt-5-nano", temperature=0)
 
-    llm = ChatOllama(
-        model="gemma3:1b",
-        temperature=0
-    )
+    # llm = ChatOllama(
+    #     model="gemma3:1b",
+    #     temperature=0
+    # )
 
     chain = prompt | llm
     response = chain.invoke({"information": information})
