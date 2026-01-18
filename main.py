@@ -5,19 +5,18 @@ load_dotenv()
 from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
-
-from tavily import TavilyClient
 from pydantic import BaseModel, Field
-
+from tavily import TavilyClient
 
 tavily = TavilyClient()
 
+
 # Define a custom search tool using the @tool decorator
 @tool
-def search(query: str) -> str: # Args and Returns needed for @tool decorator
+def search(query: str) -> str:  # Args and Returns needed for @tool decorator
     """
     A search tool that searches the web.
     Args :
@@ -31,19 +30,26 @@ def search(query: str) -> str: # Args and Returns needed for @tool decorator
 
     return response
 
+
 class Source(BaseModel):
-    """ A source returned by the search tool."""
-    url:str = Field(..., description="The URL of the source")
+    """A source returned by the search tool."""
+
+    url: str = Field(..., description="The URL of the source")
+
 
 class searchResponse(BaseModel):
-    """ The response returned by the search tool."""
+    """The response returned by the search tool."""
+
     results: str = Field(..., description="The search results")
-    sources: list[Source] = Field(default_factory=list,  description="The sources of the search results")    
+    sources: list[Source] = Field(
+        default_factory=list, description="The sources of the search results"
+    )
+
 
 llm = ChatOpenAI(model="gpt-5")
 # llm = ChatOllama(model="sparksammy/tinysam-l3.2", temperature=0) # Example of using Ollama LLM which has tools enabled by default
 
-tools = [TavilySearch()] # or use [search] to use the custom tool defined above
+tools = [TavilySearch()]  # or use [search] to use the custom tool defined above
 agent = create_agent(model=llm, tools=tools, response_format=searchResponse)
 
 
