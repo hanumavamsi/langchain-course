@@ -13,12 +13,13 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
 # from langchain_core.output_parsers import PydanticOutputParser
 from schemas import AgentOutput
+from langchain.agents import create_agent
 
 
 tools = [TavilySearch()]
 
 # The reason we are using gpt-4 and not gpt-5 is that as of June 2024, gpt-5 does not support function calling which is required for the React agent to work properly
-llm = ChatOpenAI(model="gpt-4", temperature=0)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # structured output parsing using pydantic models
 # Instead of the formatting the output ourselves, we can leverage the pydantic model to define the structure of the output we want from the LLM
@@ -36,7 +37,14 @@ react_prompt_template = PromptTemplate(template=REACT_PROMPT_WITH_FORMAT_INSTRUC
 )
 
 # Create the React agent with the custom prompt and output parser -> The output parser will validate the output using the schema (pydantic model)
+# uses LangGraph instead of AgentExecutor
 agent = create_react_agent(llm=llm, tools=tools, prompt=react_prompt_template)
+
+
+# Instead of using create_react_agent, we can use create_agent ( Langchain latest )
+model = ChatOpenAI(model="gpt-4", temperature=0)
+new_agent_using_create_agent = create_agent(model=model, tools=tools, response_format=AgentOutput)
+
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
@@ -57,11 +65,24 @@ chain = agent_executor | extract_output | structured_llm
 
 def main():
     print("Hello from langchain-course!")
-    result = chain.invoke(
+    # result = chain.invoke(
+    #     {
+    #         "input": "search for 3 job postings for an ai engineer using langchain in the bay area on linkedin and list their details?",
+    #     }
+    # )
+
+    result = new_agent_using_create_agent.invoke(
         {
-            "input": "search for 3 job postings for an ai engineer using langchain in the bay area on linkedin and list their details?",
+            "messages" : [
+                {
+                    "role": "user",
+                    "content": "search for 3 job postings for an ai engineer using langchain in the bay area on linkedin and list their details?"
+                }
+            ]
         }
     )
+
+
     print("Type of result:", type(result))
     print(result)
 
