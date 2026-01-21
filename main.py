@@ -11,6 +11,7 @@ from langchain_tavily import TavilySearch
 from prompt import REACT_PROMPT_WITH_FORMAT_INSTRUCTIONS
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
+
 # from langchain_core.output_parsers import PydanticOutputParser
 from schemas import AgentOutput
 from langchain.agents import create_agent
@@ -32,9 +33,16 @@ react_prompt = hub.pull("hwchase17/react")
 # output_parser = PydanticOutputParser(pydantic_object=AgentOutput)
 
 # Create a PromptTemplate from the REACT_PROMPT_WITH_FORMAT_INSTRUCTIONS
-react_prompt_template = PromptTemplate(template=REACT_PROMPT_WITH_FORMAT_INSTRUCTIONS, input_variables=["input", "tools", "tool_names", "agent_scratchpad", "format_instructions"]).partial(
-    format_instructions = ""
-)
+react_prompt_template = PromptTemplate(
+    template=REACT_PROMPT_WITH_FORMAT_INSTRUCTIONS,
+    input_variables=[
+        "input",
+        "tools",
+        "tool_names",
+        "agent_scratchpad",
+        "format_instructions",
+    ],
+).partial(format_instructions="")
 
 # Create the React agent with the custom prompt and output parser -> The output parser will validate the output using the schema (pydantic model)
 # uses LangGraph instead of AgentExecutor
@@ -43,16 +51,16 @@ agent = create_react_agent(llm=llm, tools=tools, prompt=react_prompt_template)
 
 # Instead of using create_react_agent, we can use create_agent ( Langchain latest )
 model = ChatOpenAI(model="gpt-4", temperature=0)
-new_agent_using_create_agent = create_agent(model=model, tools=tools, response_format=AgentOutput)
+new_agent_using_create_agent = create_agent(
+    model=model, tools=tools, response_format=AgentOutput
+)
 
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 # Runnable basically turns a function into a runnable component that can be composed into chains,
 # here we are extracting the "output" key from the agent executor's output
-extract_output = RunnableLambda(
-    lambda x: x["output"]
-)
+extract_output = RunnableLambda(lambda x: x["output"])
 
 # Runnable to parse the output using the Pydantic output parser
 # parse_output = RunnableLambda(
@@ -73,15 +81,14 @@ def main():
 
     result = new_agent_using_create_agent.invoke(
         {
-            "messages" : [
+            "messages": [
                 {
                     "role": "user",
-                    "content": "search for 3 job postings for an ai engineer using langchain in the bay area on linkedin and list their details?"
+                    "content": "search for 3 job postings for an ai engineer using langchain in the bay area on linkedin and list their details?",
                 }
             ]
         }
     )
-
 
     print("Type of result:", type(result))
     print(result)
